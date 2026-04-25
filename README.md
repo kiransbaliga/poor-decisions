@@ -28,7 +28,7 @@ A zero-cost, serverless expense logging system. Log expenses in seconds from you
 ## Project Structure
 
 ```
-expense-tracker/
+poor-decisions/
 ├── apps-script/
 │   ├── Code.gs              ← Backend POST parser & spreadsheet updater
 │   └── Setup.html           ← Beautiful HTML Sidebar UI for Google Sheets setup
