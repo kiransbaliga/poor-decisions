@@ -6,7 +6,6 @@ If you prefer to build the shortcut manually instead of downloading the pre-made
 
 ## Prerequisites
 - You've completed the Setup Wizard in Google Sheets and copied your Web App URL.
-- Make sure iCloud Drive is enabled for the Shortcuts app.
 
 ---
 
@@ -15,54 +14,40 @@ If you prefer to build the shortcut manually instead of downloading the pre-made
 ```
 [Text] "Poor Decisions" (Shortcut name)
  │
- ├─ 1. Get File                  → from iCloud Drive/Shortcuts/expense-config.txt
- │                              (Disable "Error if Not Found")
- ├─ 2. If (File has any value)
- │      └─ 3. Set Variable       → api_url = File
- ├─ 4. Otherwise
- │      ├─ 5. Ask for Input      → "Paste your Apps Script Web App URL"
- │      ├─ 6. Save File          → Input to iCloud Drive/Shortcuts/expense-config.txt
- │      └─ 7. Set Variable       → api_url = Input
+ ├─ 1. URL                       → Paste your Web App URL here
+ ├─ 2. Set Variable              → api_url = URL
  │
- ├─ 8. Ask for Input (Text)      → "What is this expense about?"
- ├─ 9. Set Variable              → description
+ ├─ 3. Ask for Input (Text)      → "What is this expense about?"
+ ├─ 4. Set Variable              → description
  │
- ├─10. Ask for Input (Number)    → "How much?"
- ├─11. Set Variable              → amount
+ ├─ 5. Ask for Input (Number)    → "How much?"
+ ├─ 6. Set Variable              → amount
  │
- ├─12. Ask for Input (Date)      → "Select date"
- ├─13. Format Date               → "yyyy-MM-dd" → date_formatted
- ├─14. Format Date               → "HH:mm"      → time_formatted
+ ├─ 7. Ask for Input (Date)      → "Select date"
+ ├─ 8. Format Date               → "yyyy-MM-dd" → date_formatted
+ ├─ 9. Format Date               → "HH:mm"      → time_formatted
  │
- ├─15. Choose from List          → Category picker
- ├─16. Set Variable              → category
+ ├─10. Choose from List          → Category picker
+ ├─11. Set Variable              → category
  │
- ├─17. Dictionary                → Build JSON payload
- ├─18. Get Contents of URL       → POST to URL (api_url variable)
- ├─19. Get Dictionary Value      → Extract "status" from response
+ ├─12. Dictionary                → Build JSON payload
+ ├─13. Get Contents of URL       → POST to URL (api_url variable)
+ ├─14. Get Dictionary Value      → Extract "status" from response
  │
- ├─20. If (status = "success")
+ ├─15. If (status = "success")
  │      └─ Show Notification     → ✅ "Logged"
- └─21. Otherwise
+ └─16. Otherwise
         └─ Show Alert            → ❌ "Sync failed." + response message
 ```
 
 ---
 
-## First Run Configuration Magic
+## Setup Steps
 
-The unique part of this shortcut is steps 1-7. 
+1. Download the shortcut from the website.
+2. Open the **Shortcuts app** on your iPhone.
+3. Tap the **three dots (...)** on the Poor Decisions shortcut to edit it.
+4. In the very first action block, replace `<your-url-here>` with the **Web App URL** you copied from Google Apps Script (it should start with `https://script.google.com/...`).
+5. Tap **Done** to save.
 
-By using the **Get File** action pointing to `/Shortcuts/expense-config.txt`, the shortcut will check if you've already configured your URL. 
-- The first time you run it, it won't find the file, so it asks you to paste the URL and saves it.
-- **Every time you run it after that**, it silently reads the configuration and instantly asks "What is this expense about?", bypassing the setup screen.
-
----
-
-## Testing the Shortcut
-
-1. Run the shortcut from the Shortcuts app.
-2. It should prompt you: "Paste your Apps Script Web App URL".
-3. Paste the URL starting with `https://script.google.com/...`.
-4. Make a test log.
-5. Run the shortcut a **second time**. It should immediately ask "What is this expense about?" — proving the first-run config worked!
+You are now ready to log your expenses!

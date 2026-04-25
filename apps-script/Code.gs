@@ -25,10 +25,14 @@ function onOpen() {
       .addItem('Update Dashboard', 'updateDashboard')
       .addToUi();
   
-  // If property setup_complete is not true, show sidebar automatically
-  var props = PropertiesService.getDocumentProperties();
-  if (props.getProperty('setup_complete') !== 'true') {
-    showSetupSidebar();
+  try {
+    // If property setup_complete is not true, show sidebar automatically
+    var props = PropertiesService.getDocumentProperties();
+    if (props.getProperty('setup_complete') !== 'true') {
+      showSetupSidebar();
+    }
+  } catch(e) {
+    // Fails silently if properties need authorization before first run
   }
 }
 

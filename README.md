@@ -12,14 +12,14 @@ A zero-cost, serverless expense logging system. Log expenses in seconds from you
 2. **Copy the Sheet:** Click the link to copy the Google Sheets template.
 3. **Wizard Setup:** The template includes an Apps Script Sidebar Wizard that will run `setup` for you automatically on open and help configure your custom Currency (`₹`, `$`, etc.)
 4. **Download Shortcut:** Download the pre-built signed iCloud Shortcut from the website.
-5. **Config:** On first run, the iOS shortcut will ask for the Google Web App URL, save it to iCloud Drive, and never ask again.
+5. **Config:** Open the installed shortcut in your Shortcuts app and paste your Web App URL into the `<your-url-here>` placeholder.
 
 ---
 
 ## Features
 
 - **No Apps/Subscriptions** — Built on iOS native Shortcuts & Google Apps Script
-- **First-run Configuration** — Shortcut saves your Web App URL in iCloud Drive on its first run
+- **Simple URL Placement** — Easily paste the backend URL straight into the shortcut once globally.
 - **Custom Currency** — Supports `₹`, `$`, `€`, or any custom currency via the Config sheet
 - **Live dashboard** — Automatic category totals, and status warnings (🟢🟡🔴) based on budget limits.
 
