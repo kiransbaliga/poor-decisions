@@ -1,43 +1,27 @@
-# 💰 iOS Expense Tracker → Google Sheets
+# 💸 Poor Decisions™
 
-A zero-cost, serverless expense logging system. Log expenses in seconds from your iPhone using an iOS Shortcut — no app required. Data syncs automatically to a Google Sheet with monthly tabs, category budgets, and a live dashboard.
+A zero-cost, serverless expense logging system. Log expenses in seconds from your iPhone using an iOS Shortcut directly into a beautiful Google Sheet.
+
+**Now a distributable product.**
 
 ---
 
-## Architecture
+## The Setup Flow
 
-```
-iPhone (iOS Shortcut)
-  └── POST JSON
-        └── Google Apps Script Web App (free middleware)
-              └── Google Sheets (storage + dashboard)
-```
-
-**No helper app. No subscriptions. No API keys to manage.**
+1. **Website:** Head over to the Poor Decisions landing page (hosted in `docs/`).
+2. **Copy the Sheet:** Click the link to copy the Google Sheets template.
+3. **Wizard Setup:** The template includes an Apps Script Sidebar Wizard that will run `setup` for you automatically on open and help configure your custom Currency (`₹`, `$`, etc.)
+4. **Download Shortcut:** Download the pre-built signed iCloud Shortcut from the website.
+5. **Config:** On first run, the iOS shortcut will ask for the Google Web App URL, save it to iCloud Drive, and never ask again.
 
 ---
 
 ## Features
 
-- **5-step logging flow** — description → amount → date/time → category → sync
-- **Auto-creates monthly sheets** — "Apr 2025", "May 2025", etc.
-- **Live dashboard** — category budgets vs. actual spend, traffic-light status
-- **Success/failure notification** — retry on failure
-- **Easy back-tap access** — log an expense with 2 taps on the back of your phone
-- **Future-ready** — category field ready for auto-categorization from emails/messages
-
----
-
-## Quick Start
-
-### 1. Set up Google Sheets (10 min)
-Follow [sheets-template/setup-guide.md](sheets-template/setup-guide.md)
-
-### 2. Build the iOS Shortcut (15 min)
-Follow [shortcut/shortcut-steps.md](shortcut/shortcut-steps.md)
-
-### 3. Test end-to-end
-Run the shortcut → enter test data → check your sheet
+- **No Apps/Subscriptions** — Built on iOS native Shortcuts & Google Apps Script
+- **First-run Configuration** — Shortcut saves your Web App URL in iCloud Drive on its first run
+- **Custom Currency** — Supports `₹`, `$`, `€`, or any custom currency via the Config sheet
+- **Live dashboard** — Automatic category totals, and status warnings (🟢🟡🔴) based on budget limits.
 
 ---
 
@@ -46,76 +30,26 @@ Run the shortcut → enter test data → check your sheet
 ```
 expense-tracker/
 ├── apps-script/
-│   └── Code.gs              ← Copy this into Google Apps Script
+│   ├── Code.gs              ← Backend POST parser & spreadsheet updater
+│   └── Setup.html           ← Beautiful HTML Sidebar UI for Google Sheets setup
+├── docs/                    ← Static website (Ready for GitHub Pages Subdomain)
+│   ├── index.html           
+│   ├── style.css            
+│   └── script.js            
 ├── sheets-template/
-│   └── setup-guide.md       ← Step-by-step Sheets + Apps Script setup
-├── shortcut/
-│   ├── shortcut-steps.md    ← Step-by-step iOS Shortcuts build guide
-│   └── shortcut-payload.json ← Sample JSON the shortcut sends
-└── README.md
+│   └── setup-guide.md       ← Instructions for setup mapping
+└── shortcut/
+    └── shortcut-steps.md    ← Breakdown of how the Shortcut logic works
 ```
 
 ---
 
-## Categories
+## Deployment (GitHub Pages)
 
-| Category | Default Budget |
-|----------|---------------|
-| Food & Drink | ₹5,000/mo |
-| Transport | ₹3,000/mo |
-| Shopping | ₹4,000/mo |
-| Entertainment | ₹2,000/mo |
-| Health | ₹2,000/mo |
-| Bills & Utilities | ₹8,000/mo |
-| Other | ₹2,000/mo |
+The website is located in the `docs/` directory.
 
-Edit budgets anytime in the **⚙️ Config** sheet.
-
----
-
-## API Reference
-
-### POST `/exec`
-
-Logs a single expense.
-
-**Request body (JSON):**
-```json
-{
-  "description": "Coffee at Blue Tokai",
-  "amount": 250,
-  "date": "2025-04-25",
-  "time": "10:30",
-  "category": "Food & Drink"
-}
-```
-
-**Response:**
-```json
-{
-  "status": "success",
-  "message": "Expense logged: ₹250 for Coffee at Blue Tokai",
-  "sheet": "Apr 2025",
-  "row": 5
-}
-```
-
-### GET `/exec`
-Health check — returns `{ "status": "ok" }`.
-
----
-
-## Roadmap
-
-- [x] Manual expense logging via iOS Shortcut
-- [x] Auto-create monthly sheets
-- [x] Category budgets + dashboard
-- [ ] Phase 2: Share Sheet trigger from Mail/Messages for auto-categorization
-- [ ] Phase 3: Weekly/monthly summary notification via Shortcut automation
-- [ ] Phase 4: SwiftUI companion app for offline analytics (optional)
-
----
-
-## Security
-
-The Apps Script Web App URL is the only authentication mechanism. Treat it like a password — do not share it publicly or commit it to version control.
+To deploy it on a generic Subdomain or Custom Domain:
+1. Push this repository to GitHub.
+2. In the repository settings, go to **Pages**.
+3. Select the `main` branch, and point the directory to `/docs`.
+4. Add your custom domain (e.g. `poor-decisions.baliga.dev`) if you have one.

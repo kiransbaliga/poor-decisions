@@ -1,14 +1,7 @@
 // ============================================================
-// Expense Tracker — Google Apps Script Backend
-// ============================================================
-// Deploy this as a Web App:
-//   Execute as: Me
-//   Who has access: Anyone
-//
-// The Web App URL is the only "secret". Keep it private.
+// Poor Decisions™ Expense Tracker — Google Apps Script Backend
 // ============================================================
 
-var CURRENCY = "₹";
 var CATEGORIES = [
   "Food & Drink",
   "Transport",
@@ -21,6 +14,126 @@ var CATEGORIES = [
 
 var DASHBOARD_SHEET_NAME = "🏠 Dashboard";
 var CONFIG_SHEET_NAME    = "⚙️ Config";
+
+// ------------------------------------------------------------
+// Add custom menu to the spreadsheet on open
+// ------------------------------------------------------------
+function onOpen() {
+  SpreadsheetApp.getUi()
+      .createMenu('Poor Decisions™')
+      .addItem('Start Setup Wizard', 'showSetupSidebar')
+      .addItem('Update Dashboard', 'updateDashboard')
+      .addToUi();
+  
+  // If property setup_complete is not true, show sidebar automatically
+  var props = PropertiesService.getDocumentProperties();
+  if (props.getProperty('setup_complete') !== 'true') {
+    showSetupSidebar();
+  }
+}
+
+// ------------------------------------------------------------
+// Show the sidebar with the setup wizard HTML
+// ------------------------------------------------------------
+function showSetupSidebar() {
+  var html = HtmlService.createHtmlOutputFromFile('Setup')
+      .setTitle('Poor Decisions™ Setup')
+      .setWidth(300);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+// ------------------------------------------------------------
+// Run setup from the sidebar (creates sheets, config)
+// ------------------------------------------------------------
+function runAutomatedSetup(currencySymbol) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    // Create Config sheet if missing
+    var config = ss.getSheetByName(CONFIG_SHEET_NAME);
+    if (!config) {
+      config = ss.insertSheet(CONFIG_SHEET_NAME);
+      setupConfigSheet(config, currencySymbol || "₹");
+    }
+
+    // Create Dashboard sheet if missing
+    if (!ss.getSheetByName(DASHBOARD_SHEET_NAME)) {
+      ss.insertSheet(DASHBOARD_SHEET_NAME, 0);
+    }
+
+    // Delete default "Sheet1" if it exists and is empty
+    var defaultSheet = ss.getSheetByName("Sheet1");
+    if (defaultSheet && defaultSheet.getLastRow() <= 1) {
+      ss.deleteSheet(defaultSheet);
+    }
+
+    updateDashboard();
+    SpreadsheetApp.flush();
+    
+    // Mark setup as complete
+    PropertiesService.getDocumentProperties().setProperty('setup_complete', 'true');
+    
+    return { success: true, message: "Sheets created successfully!" };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
+}
+
+// ------------------------------------------------------------
+// Get Currency configured in the sheet
+// ------------------------------------------------------------
+function getConfiguredCurrency() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var config = ss.getSheetByName(CONFIG_SHEET_NAME);
+  if (!config) return "₹"; // fallback
+  
+  // Look for currency setting in columns D and E
+  var data = config.getDataRange().getValues();
+  for (var r = 0; r < data.length; r++) {
+    if (data[r][3] === "Currency Symbol" && data[r][4]) {
+      return data[r][4];
+    }
+  }
+  return "₹";
+}
+
+// ------------------------------------------------------------
+// Initialise the Config sheet with categories + settings
+// ------------------------------------------------------------
+function setupConfigSheet(sheet, currencySymbol) {
+  sheet.appendRow(["Category", "Monthly Budget"]);
+  var headerRange = sheet.getRange(1, 1, 1, 2);
+  headerRange.setBackground("#1a1a2e").setFontColor("#e0e0ff").setFontWeight("bold");
+
+  var defaultBudgets = {
+    "Food & Drink":      5000,
+    "Transport":         3000,
+    "Shopping":          4000,
+    "Entertainment":     2000,
+    "Health":            2000,
+    "Bills & Utilities": 8000,
+    "Other":             2000
+  };
+
+  var rowIndex = 2;
+  CATEGORIES.forEach(function(cat) {
+    sheet.getRange(rowIndex, 1).setValue(cat);
+    sheet.getRange(rowIndex, 2).setValue(defaultBudgets[cat] || 0);
+    rowIndex++;
+  });
+
+  sheet.setColumnWidth(1, 160);
+  sheet.setColumnWidth(2, 180);
+  
+  // Add Settings area
+  sheet.getRange("D1").setValue("Setting").setBackground("#1a1a2e").setFontColor("#e0e0ff").setFontWeight("bold");
+  sheet.getRange("E1").setValue("Value").setBackground("#1a1a2e").setFontColor("#e0e0ff").setFontWeight("bold");
+  sheet.getRange("D2").setValue("Currency Symbol");
+  sheet.getRange("E2").setValue(currencySymbol);
+  
+  sheet.setColumnWidth(4, 160);
+  sheet.setColumnWidth(5, 120);
+}
 
 // ------------------------------------------------------------
 // Entry point — receives POST from iOS Shortcut
@@ -39,13 +152,15 @@ function doPost(e) {
       return jsonResponse({ status: "error", message: "Missing required fields: description, amount, date" });
     }
 
+    var curr = getConfiguredCurrency();
+
     // Validate category — fall back to "Other" if unknown
     if (CATEGORIES.indexOf(category) === -1) {
       category = "Other";
     }
 
     var monthSheetName = getMonthSheetName(date);
-    var sheet = getOrCreateMonthSheet(monthSheetName, date);
+    var sheet = getOrCreateMonthSheet(monthSheetName, date, curr);
 
     // Append row: [#, Date, Time, Description, Category, Amount]
     var lastRow   = sheet.getLastRow();
@@ -68,7 +183,7 @@ function doPost(e) {
 
     return jsonResponse({
       status:  "success",
-      message: "Expense logged: " + CURRENCY + amount + " for " + description,
+      message: "Expense logged: " + curr + amount + " for " + description,
       sheet:   monthSheetName,
       row:     newRow
     });
@@ -78,60 +193,38 @@ function doPost(e) {
   }
 }
 
-// ------------------------------------------------------------
-// Health check — GET request returns status
-// ------------------------------------------------------------
 function doGet(e) {
-  return jsonResponse({ status: "ok", message: "Expense Tracker API is running." });
+  return jsonResponse({ status: "ok", message: "Poor Decisions API is running." });
 }
 
-// ------------------------------------------------------------
-// Get or create a monthly sheet (e.g. "Apr 2025")
-// ------------------------------------------------------------
-function getOrCreateMonthSheet(name, dateStr) {
+function getOrCreateMonthSheet(name, dateStr, curr) {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name);
 
   if (!sheet) {
     sheet = ss.insertSheet(name);
-    setupMonthSheet(sheet, dateStr);
+    setupMonthSheet(sheet, dateStr, curr);
   }
 
   return sheet;
 }
 
-// ------------------------------------------------------------
-// Initialise a new month sheet with headers + formatting
-// ------------------------------------------------------------
-function setupMonthSheet(sheet, dateStr) {
-  // Headers
-  var headers = ["#", "Date", "Time", "Description", "Category", "Amount (" + CURRENCY + ")"];
+function setupMonthSheet(sheet, dateStr, curr) {
+  var headers = ["#", "Date", "Time", "Description", "Category", "Amount (" + curr + ")"];
   sheet.appendRow(headers);
 
-  // Style header row
   var headerRange = sheet.getRange(1, 1, 1, headers.length);
-  headerRange.setBackground("#1a1a2e");
-  headerRange.setFontColor("#e0e0ff");
-  headerRange.setFontWeight("bold");
-  headerRange.setFontSize(11);
-
-  // Freeze header row
+  headerRange.setBackground("#1a1a2e").setFontColor("#e0e0ff").setFontWeight("bold").setFontSize(11);
   sheet.setFrozenRows(1);
 
-  // Column widths
-  sheet.setColumnWidth(1, 40);   // #
-  sheet.setColumnWidth(2, 100);  // Date
-  sheet.setColumnWidth(3, 70);   // Time
-  sheet.setColumnWidth(4, 250);  // Description
-  sheet.setColumnWidth(5, 140);  // Category
-  sheet.setColumnWidth(6, 110);  // Amount
-
-  // Alternating row color (applied by updateMonthSheetFormatting on each write)
+  sheet.setColumnWidth(1, 40);
+  sheet.setColumnWidth(2, 100);
+  sheet.setColumnWidth(3, 70);
+  sheet.setColumnWidth(4, 250);
+  sheet.setColumnWidth(5, 140);
+  sheet.setColumnWidth(6, 110);
 }
 
-// ------------------------------------------------------------
-// Update the Dashboard sheet with current month's totals
-// ------------------------------------------------------------
 function updateDashboard() {
   var ss        = SpreadsheetApp.getActiveSpreadsheet();
   var dashboard = ss.getSheetByName(DASHBOARD_SHEET_NAME);
@@ -139,21 +232,19 @@ function updateDashboard() {
 
   if (!dashboard || !config) return;
 
-  // Get current month sheet name
+  var curr = getConfiguredCurrency();
   var today          = new Date();
   var monthSheetName = getMonthSheetName(formatISODate(today));
   var monthSheet     = ss.getSheetByName(monthSheetName);
 
-  // Read budgets from Config
   var configData = config.getDataRange().getValues();
   var budgets    = {};
   for (var i = 1; i < configData.length; i++) {
     var cat = configData[i][0];
     var bgt = configData[i][1];
-    if (cat) budgets[cat] = bgt || 0;
+    if (cat && cat !== "Setting") budgets[cat] = bgt || 0;
   }
 
-  // Tally spending per category from current month sheet
   var spending = {};
   CATEGORIES.forEach(function(cat) { spending[cat] = 0; });
 
@@ -170,28 +261,13 @@ function updateDashboard() {
     }
   }
 
-  // Write to Dashboard (rows 4 onwards, cols A–F)
-  // Layout:
-  //   Row 1: Title
-  //   Row 2: Month label
-  //   Row 3: Column headers
-  //   Row 4+: Category rows
+  dashboard.getRange("A1").setValue("💰 Poor Decisions Dashboard").setFontSize(16).setFontWeight("bold");
+  dashboard.getRange("A2").setValue("Current Month: " + monthSheetName).setFontSize(11).setFontColor("#666666");
 
-  // Ensure headers exist (rows 1–3)
-  dashboard.getRange("A1").setValue("💰 Expense Dashboard");
-  dashboard.getRange("A1").setFontSize(16).setFontWeight("bold");
+  var colHeaders = ["Category", "Budget (" + curr + ")", "Spent (" + curr + ")", "% Used", "Remaining", "Status"];
+  dashboard.getRange(3, 1, 1, colHeaders.length).setValues([colHeaders])
+    .setBackground("#1a1a2e").setFontColor("#e0e0ff").setFontWeight("bold");
 
-  dashboard.getRange("A2").setValue("Current Month: " + monthSheetName);
-  dashboard.getRange("A2").setFontSize(11).setFontColor("#666666");
-
-  var colHeaders = ["Category", "Budget (" + CURRENCY + ")", "Spent (" + CURRENCY + ")", "% Used", "Remaining", "Status"];
-  dashboard.getRange(3, 1, 1, colHeaders.length).setValues([colHeaders]);
-  dashboard.getRange(3, 1, 1, colHeaders.length)
-    .setBackground("#1a1a2e")
-    .setFontColor("#e0e0ff")
-    .setFontWeight("bold");
-
-  // Write category rows
   var totalBudget  = 0;
   var totalSpent   = 0;
   var dataRows     = [];
@@ -207,85 +283,18 @@ function updateDashboard() {
     dataRows.push([cat, budget, spent, pct + "%", remaining, status]);
   });
 
-  // Total row
   var totalPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
   dataRows.push(["TOTAL", totalBudget, totalSpent, totalPct + "%", totalBudget - totalSpent, ""]);
 
-  // Clear old data and write fresh
   dashboard.getRange(4, 1, 20, 6).clearContent().clearFormat();
   dashboard.getRange(4, 1, dataRows.length, 6).setValues(dataRows);
 
-  // Highlight total row
   var totalRowIndex = 4 + CATEGORIES.length;
-  dashboard.getRange(totalRowIndex, 1, 1, 6)
-    .setBackground("#e8f5e9")
-    .setFontWeight("bold");
-
-  // Freeze header + title rows
+  dashboard.getRange(totalRowIndex, 1, 1, 6).setBackground("#e8f5e9").setFontWeight("bold");
   dashboard.setFrozenRows(3);
 }
 
-// ------------------------------------------------------------
-// Setup the entire spreadsheet (run ONCE manually)
-// ------------------------------------------------------------
-function setupSpreadsheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  // Create Dashboard sheet if missing
-  if (!ss.getSheetByName(DASHBOARD_SHEET_NAME)) {
-    ss.insertSheet(DASHBOARD_SHEET_NAME, 0);
-  }
-
-  // Create Config sheet if missing
-  var config = ss.getSheetByName(CONFIG_SHEET_NAME);
-  if (!config) {
-    config = ss.insertSheet(CONFIG_SHEET_NAME);
-    setupConfigSheet(config);
-  }
-
-  // Delete default "Sheet1" if it exists and is empty
-  var defaultSheet = ss.getSheetByName("Sheet1");
-  if (defaultSheet && defaultSheet.getLastRow() === 0) {
-    ss.deleteSheet(defaultSheet);
-  }
-
-  updateDashboard();
-  SpreadsheetApp.flush();
-  Logger.log("Setup complete!");
-}
-
-// ------------------------------------------------------------
-// Initialise the Config sheet with categories + default budgets
-// ------------------------------------------------------------
-function setupConfigSheet(sheet) {
-  sheet.appendRow(["Category", "Monthly Budget (" + CURRENCY + ")"]);
-  var headerRange = sheet.getRange(1, 1, 1, 2);
-  headerRange.setBackground("#1a1a2e").setFontColor("#e0e0ff").setFontWeight("bold");
-
-  var defaultBudgets = {
-    "Food & Drink":      5000,
-    "Transport":         3000,
-    "Shopping":          4000,
-    "Entertainment":     2000,
-    "Health":            2000,
-    "Bills & Utilities": 8000,
-    "Other":             2000
-  };
-
-  CATEGORIES.forEach(function(cat) {
-    sheet.appendRow([cat, defaultBudgets[cat] || 0]);
-  });
-
-  sheet.setColumnWidth(1, 160);
-  sheet.setColumnWidth(2, 180);
-}
-
-// ------------------------------------------------------------
-// Helpers
-// ------------------------------------------------------------
-
 function getMonthSheetName(isoDate) {
-  // "2025-04-25" → "Apr 2025"
   var parts = isoDate.split("-");
   var d     = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
   var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -293,7 +302,6 @@ function getMonthSheetName(isoDate) {
 }
 
 function formatDate(isoDate) {
-  // "2025-04-25" → "25 Apr 2025"
   var parts  = isoDate.split("-");
   var d      = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
   var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -308,7 +316,5 @@ function formatISODate(date) {
 }
 
 function jsonResponse(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }

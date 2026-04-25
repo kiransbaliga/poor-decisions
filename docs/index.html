@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poor Decisions™ | Track where it all went wrong</title>
+  <meta name="description" content="A zero-cost, 5-second expense tracker from your iPhone directly to Google Sheets.">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="container">
+      <div class="pill">💸 Zero subscriptions. Zero apps.</div>
+      <h1>Poor Decisions™</h1>
+      <p class="subtitle">Log your expenses in 5 seconds from your iPhone straight into a beautiful Google Sheet. Track every bad financial choice.</p>
+      
+      <div class="hero-image">
+        <!-- Abstract shape or mockup placeholder -->
+        <div class="phone-mockup">
+          <div class="mockup-content">
+            <span class="m-title">Add Expense</span>
+            <div class="m-step">What is this expense about?</div>
+            <div class="m-input">Blue Tokai Coffee</div>
+            <div class="m-step active-step">How much? <span class="cursor">|</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Setup Section -->
+  <section class="setup" id="setup">
+    <div class="container">
+      <h2>Get Started in 3 Steps</h2>
+      <p class="section-desc">We use Google Apps Script as a free server linking your iPhone Shortcut to your Google Sheets database.</p>
+
+      <div class="steps-grid">
+        
+        <!-- Step 1 -->
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>Copy the Database</h3>
+          <p>Copy the "Poor Decisions" Google Sheet template to your Google Drive.</p>
+          <p class="subtext">Make sure you are logged into your Google account.</p>
+          <a href="https://docs.google.com/spreadsheets/d/1inAuj4ScTlJNdCORbK7lDWQsksBBIJRw4bG_uMpGVR8/copy" target="_blank" class="btn btn-primary">
+            <span>Copy Google Sheet</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          </a>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>Run Setup Wizard</h3>
+          <p>Open your newly copied Google Sheet. Click the <b>Poor Decisions™</b> menu at the top and select <b>Start Setup Wizard</b>.</p>
+          <div class="instructions">
+            <ul>
+              <li>Confirm your currency.</li>
+              <li>Deploy as Web App (Execute as: Me, Access: Anyone).</li>
+              <li>Copy your Web App URL.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card highlight-card">
+          <div class="step-number">3</div>
+          <h3>Add to iPhone</h3>
+          <p>Download the iOS Shortcut to your phone. It will ask for the Web App URL you just copied on its first run.</p>
+          <p class="subtext mobile-only-text">Tap the button below from your iPhone.</p>
+          
+          <a href="https://www.icloud.com/shortcuts/e3257ca396864fcfa6a2e34757515546" id="addShortcutBtn" class="btn btn-black">
+            <span>Add Shortcut to iPhone</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg>
+          </a>
+          <p class="desktop-warning" id="desktopWarning" style="display:none;">⚠️ This button only works on an iPhone.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="container">
+      <h2>Why it's better</h2>
+      <div class="feature-grid">
+        <div class="feat">
+          <div class="f-icon">🔒</div>
+          <h4>Private & Secure</h4>
+          <p>No 3rd party databases. All data is saved inside your own Google Drive. We can't see your poor spending habits.</p>
+        </div>
+        <div class="feat">
+          <div class="f-icon">⚡</div>
+          <h4>Insanely Fast</h4>
+          <p>Hook it up to iOS "Back Tap". Double tap the back of your phone, punch in the amount, and it's logged in seconds.</p>
+        </div>
+        <div class="feat">
+          <div class="f-icon">📊</div>
+          <h4>Live Dashboard</h4>
+          <p>The sheet automatically calculates your monthly budget hit and rolls your categories up into a dashboard.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>Poor Decisions™ | Built for iOS & Google Sheets</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

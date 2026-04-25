@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: #333;
+        padding: 16px;
+        margin: 0;
+        background-color: #fcfcfc;
+      }
+      h2 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-top: 0;
+        color: #1a1a2e;
+        border-bottom: 2px solid #eaeaea;
+        padding-bottom: 8px;
+      }
+      p { font-size: 14px; line-height: 1.5; color: #555; }
+      .step { display: none; }
+      .step.active { display: block; animation: fadeIn 0.3s; }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      .btn {
+        background-color: #1a1a2e;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 12px;
+        transition: background-color 0.2s;
+      }
+      .btn:hover { background-color: #2a2a4e; }
+      .btn:disabled { background-color: #aaa; cursor: not-allowed; }
+      .btn-secondary {
+        background-color: transparent;
+        color: #1a1a2e;
+        border: 1px solid #1a1a2e;
+        margin-top: 8px;
+      }
+      .btn-secondary:hover { background-color: #f0f0f0; }
+      
+      .input-group { margin-top: 16px; margin-bottom: 16px; }
+      label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: #333; }
+      input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      
+      .instructions {
+        background-color: #f0f4f8;
+        border-radius: 6px;
+        padding: 12px;
+        font-size: 13px;
+        margin-top: 12px;
+      }
+      .instructions ol { margin: 0; padding-left: 20px; }
+      .instructions li { margin-bottom: 8px; }
+      
+      .spinner {
+        display: none;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(0,0,0,0.1);
+        border-top-color: #1a1a2e;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 10px auto;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      
+      .progress-container { margin-bottom: 20px; }
+      .progress-bar { width: 100%; background: #e0e0e0; height: 6px; border-radius: 3px; overflow: hidden; }
+      .progress-fill { height: 100%; background: #1a1a2e; transition: width 0.3s; }
+      .step-text { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #888; letter-spacing: 0.5px; margin-bottom: 4px; display: block;}
+    </style>
+  </head>
+  <body>
+    
+    <div class="progress-container">
+      <span class="step-text" id="stepIndicator">Step 1 of 3</span>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 33%"></div>
+      </div>
+    </div>
+
+    <!-- STEP 1: INITIALIZE -->
+    <div id="step1" class="step active">
+      <h2>Welcome to Poor Decisions™</h2>
+      <p>Let's set up your expense tracker sheets.</p>
+      
+      <div class="input-group">
+        <label for="currencyInput">Your Currency Symbol</label>
+        <input type="text" id="currencyInput" value="₹" placeholder="$ or € or ₹">
+      </div>
+      
+      <div class="spinner" id="loader"></div>
+      <p id="errorMsg" style="color: red; font-size: 12px; display: none;"></p>
+      
+      <button class="btn" id="btnRunSetup" onclick="runSetup()">Create My Sheets</button>
+    </div>
+
+    <!-- STEP 2: DEPLOY -->
+    <div id="step2" class="step">
+      <h2>Deploy to Cloud</h2>
+      <p>Now we need to create a secure URL for your iOS Shortcut to send data to.</p>
+      
+      <div class="instructions">
+        <ol>
+          <li>Click <b>Deploy</b> (blue button top right of the screen)</li>
+          <li>Select <b>New deployment</b></li>
+          <li>Click the <b>gear icon ⚙️</b> next to "Select type" and choose <b>Web app</b></li>
+          <li>Under <b>Execute as</b>, select <b>Me</b></li>
+          <li>Under <b>Who has access</b>, select <b>Anyone</b></li>
+          <li>Click <b>Deploy</b> and hit <b>Authorize access</b> if prompted.</li>
+          <li><b>Copy the Web App URL</b> it gives you.</li>
+        </ol>
+      </div>
+      
+      <button class="btn" onclick="nextStep(3)">I copied the Web App URL</button>
+    </div>
+
+    <!-- STEP 3: FINISH -->
+    <div id="step3" class="step">
+      <h2>🎉 You're almost ready!</h2>
+      <p>Your Google Sheet is now a database.</p>
+      
+      <div class="instructions" style="background-color: #e8f5e9;">
+        <p style="margin-top:0;"><b>Next step:</b> Go back to the Poor Decisions website on your iPhone, click "Add to iPhone", and paste your Web App URL when the Shortcut asks for it.</p>
+      </div>
+      
+      <button class="btn btn-secondary" onclick="google.script.host.close()">Close Wizard</button>
+    </div>
+
+    <script>
+      function nextStep(stepNum) {
+        document.querySelectorAll('.step').forEach(function(el) {
+          el.classList.remove('active');
+        });
+        document.getElementById('step' + stepNum).classList.add('active');
+        
+        document.getElementById('stepIndicator').innerText = "Step " + stepNum + " of 3";
+        var progressPercent = (stepNum / 3) * 100;
+        document.getElementById('progressFill').style.width = progressPercent + "%";
+      }
+
+      function runSetup() {
+        var btn = document.getElementById('btnRunSetup');
+        var loader = document.getElementById('loader');
+        var errorMsg = document.getElementById('errorMsg');
+        var currency = document.getElementById('currencyInput').value.trim() || '₹';
+        
+        btn.disabled = true;
+        btn.innerText = "Creating sheets...";
+        loader.style.display = "block";
+        errorMsg.style.display = "none";
+        
+        // Call the server-side function
+        google.script.run
+          .withSuccessHandler(function(response) {
+            loader.style.display = "none";
+            if (response.success) {
+              nextStep(2);
+            } else {
+              btn.disabled = false;
+              btn.innerText = "Try Again";
+              errorMsg.innerText = response.message;
+              errorMsg.style.display = "block";
+            }
+          })
+          .withFailureHandler(function(error) {
+            loader.style.display = "none";
+            btn.disabled = false;
+            btn.innerText = "Try Again";
+            errorMsg.innerText = "Error trying to run setup. Check your network or try again.";
+            errorMsg.style.display = "block";
+          })
+          .runAutomatedSetup(currency);
+      }
+    </script>
+  </body>
+</html>
