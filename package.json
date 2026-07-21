@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "opentype.js": "^2.0.0"
+  }
+}
